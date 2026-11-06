@@ -363,6 +363,31 @@ await test('llmCritic=true 且 mock 返回空 verdicts：回落确定性评分�
   assert.ok(result.markdown.includes('评分源 heuristic'));
 });
 
+await test('宿主未 inject llm：createBridge 不抛错，回退 mock', () => {
+  const hostile = {};
+  Object.defineProperty(hostile, 'llm', {
+    get() {
+      throw new Error('cannot get property "llm" without inject');
+    },
+  });
+  const config = cfg({ provider: 'auto', baseUrl: '', apiKey: '' });
+  const bridge = createBridge(config, { ctx: hostile });
+  assert.equal(bridge.id, 'mock');
+});
+
+await test('宿主未 inject llm：插件装配与调用仍可跑通（真实回归）', async () => {
+  const tools = new Map();
+  const ctx = { tools: { register: (tool) => tools.set(tool.name, tool) }, logger: { info() {}, warn() {} } };
+  Object.defineProperty(ctx, 'llm', {
+    get() {
+      throw new Error('cannot get property "llm" without inject');
+    },
+  });
+  apply(ctx, { provider: 'auto', llmCritic: false, mockScenario: 'converge-r2' });
+  const out = await tools.get('council_debate').execute({ requirement: REQ });
+  assert.match(out, /^# 内阁评审结论/);
+});
+
 console.log('\n[6] 插件装配');
 
 await test('apply() 注册 4 个工具，council_debate 可跑通', async () => {
