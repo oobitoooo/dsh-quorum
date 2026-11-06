@@ -1,4 +1,4 @@
-// dsh-council / test/smoke.mjs —— 编排、调权、熔断、出口守卫的回归测试
+// dsh-quorum / test/smoke.mjs —— 编排、调权、熔断、出口守卫的回归测试
 //
 // 全部离线：mock provider 是确定性的，所以断言可以写死（轮次、终止原因、权重方向）。
 // 跑法：node test/smoke.mjs
@@ -6,17 +6,17 @@
 import assert from 'node:assert/strict';
 import { resolveConfig } from '../lib/config.js';
 import { PERSONAS } from '../lib/personas.js';
-import { CouncilSandbox, assertNoTranscript } from '../lib/sandbox.js';
+import { QuorumSandbox, assertNoTranscript } from '../lib/sandbox.js';
 import { projectWeights, updateWeights, initialWeights } from '../lib/weights.js';
 import { decideStop } from '../lib/breaker.js';
 import { scoreStatement, mergeVerdict, anonymizeStatements, evaluateRound } from '../lib/critic.js';
 import { buildCriticUserPrompt } from '../lib/personas.js';
 import { createBridge } from '../lib/llm/bridge.js';
-import { runCouncil } from '../lib/orchestrator.js';
+import { runQuorum } from '../lib/orchestrator.js';
 import { apply } from '../lib/index.js';
 
 const REQ =
-  '为 dsh-council 插件设计多 Agent 辩论式需求评审：上下文隔离、动态权重、3 轮熔断，两周内可交付。';
+  '为 dsh-quorum 插件设计多 Agent 辩论式需求评审：上下文隔离、动态权重、3 轮熔断，两周内可交付。';
 
 let passed = 0;
 const failures = [];
@@ -106,7 +106,7 @@ await test('scoreStatement：超预算方案被驳回', () => {
 await test('scoreStatement：水字数被识别，质量显著低于正常发言', () => {
   const config = cfg();
   const good = scoreStatement({
-    text: '结论：复用现有工具增量接入，两周交付。关键动作：1. 注册 council_debate；2. 三席独立上下文，3000 字截断；3. 评审团一次评完。验收：连跑 3 次结论一致。',
+    text: '结论：复用现有工具增量接入，两周交付。关键动作：1. 注册 quorum_debate；2. 三席独立上下文，3000 字截断；3. 评审团一次评完。验收：连跑 3 次结论一致。',
     requirement: REQ,
     persona: PERSONAS[0],
     config,
@@ -216,20 +216,20 @@ await test('评委返回匿名标签时能映射回席位，并按 0.4 权重融
 
 await test('主席裁定：开启时进报告，关闭时整段消失', async () => {
   const on = cfg({ chairman: 'on' });
-  const withChairman = await runCouncil({ requirement: REQ, config: on, llm: bridge(on) });
+  const withChairman = await runQuorum({ requirement: REQ, config: on, llm: bridge(on) });
   assert.match(withChairman.markdown, /## .、主席裁定/);
   assert.match(withChairman.markdown, /可以开工/);
   assert.equal(withChairman.meta.chairman.used, true);
 
   const off = cfg({ chairman: 'off' });
-  const without = await runCouncil({ requirement: REQ, config: off, llm: bridge(off) });
+  const without = await runQuorum({ requirement: REQ, config: off, llm: bridge(off) });
   assert.ok(!without.markdown.includes('主席裁定'));
   assert.equal(without.meta.chairman.used, false);
 });
 
 await test('主席仍受出口守卫约束（报告里没有长段原文）', async () => {
   const config = cfg({ chairman: 'on' });
-  const result = await runCouncil({ requirement: REQ, config, llm: bridge(config) });
+  const result = await runQuorum({ requirement: REQ, config, llm: bridge(config) });
   assert.equal(result.meta.egress.ok, true);
   assert.ok(result.meta.egress.leaked === 0, `leaked=${result.meta.egress.leaked}`);
 });
@@ -237,7 +237,7 @@ await test('主席仍受出口守卫约束（报告里没有长段原文）', as
 console.log('\n[3] 沙箱隔离与出口守卫');
 
 await test('沙箱：各席位上下文互不共享对象', () => {
-  const sandbox = new CouncilSandbox(PERSONAS);
+  const sandbox = new QuorumSandbox(PERSONAS);
   for (const persona of PERSONAS) {
     sandbox.get(persona.id).seedSystem(`你是 ${persona.name}`);
     sandbox.get(persona.id).brief(`task for ${persona.id}`);
@@ -251,7 +251,7 @@ await test('沙箱：各席位上下文互不共享对象', () => {
 });
 
 await test('沙箱：手工共享数组会被自检拦下', () => {
-  const sandbox = new CouncilSandbox(PERSONAS);
+  const sandbox = new QuorumSandbox(PERSONAS);
   const shared = [{ role: 'user', content: 'x' }];
   sandbox.get('red_team').messages = shared;
   sandbox.get('architect').messages = shared;
@@ -259,7 +259,7 @@ await test('沙箱：手工共享数组会被自检拦下', () => {
 });
 
 await test('出口守卫：回灌原文会被拦下', () => {
-  const sandbox = new CouncilSandbox(PERSONAS);
+  const sandbox = new QuorumSandbox(PERSONAS);
   const long = '这是一段足够长的辩论原文，用来验证出口守卫能不能拦住倒灌。'.repeat(4);
   sandbox.get('red_team').record(long);
   assert.throws(() => assertNoTranscript(`# 报告\n\n${long}\n`, sandbox), /出口守卫/);
@@ -308,7 +308,7 @@ console.log('\n[5] 端到端编排（mock）');
 
 await test('converge-r2：第 2 轮达成共识即停，不跑满 3 轮', async () => {
   const config = cfg();
-  const result = await runCouncil({ requirement: REQ, config, llm: bridge(config) });
+  const result = await runQuorum({ requirement: REQ, config, llm: bridge(config) });
   assert.equal(result.meta.rounds, 2, `rounds=${result.meta.rounds}`);
   assert.equal(result.meta.stopReason, 'consensus');
   assert.ok(result.meta.quality >= config.thresholds.consensusQuality);
@@ -317,14 +317,14 @@ await test('converge-r2：第 2 轮达成共识即停，不跑满 3 轮', async 
 
 await test('converge-r3：第 2 轮仍有新增阻断，第 3 轮清空后收敛', async () => {
   const config = cfg({ mockScenario: 'converge-r3' });
-  const result = await runCouncil({ requirement: REQ, config, llm: bridge(config) });
+  const result = await runQuorum({ requirement: REQ, config, llm: bridge(config) });
   assert.equal(result.meta.rounds, 3, `rounds=${result.meta.rounds}`);
   assert.equal(result.meta.openBlockers.length, 0);
 });
 
 await test('never：始终有 P0 阻断 → 跑满 3 轮后熔断', async () => {
   const config = cfg({ mockScenario: 'never' });
-  const result = await runCouncil({ requirement: REQ, config, llm: bridge(config) });
+  const result = await runQuorum({ requirement: REQ, config, llm: bridge(config) });
   assert.equal(result.meta.rounds, 3);
   assert.equal(result.meta.stopReason, 'max-rounds');
   assert.ok(result.meta.openBlockers.length > 0);
@@ -332,7 +332,7 @@ await test('never：始终有 P0 阻断 → 跑满 3 轮后熔断', async () => 
 
 await test('overbudget：提案被驳回、掉权并在下一轮静默', async () => {
   const config = cfg({ mockScenario: 'overbudget' });
-  const result = await runCouncil({ requirement: REQ, config, llm: bridge(config) });
+  const result = await runQuorum({ requirement: REQ, config, llm: bridge(config) });
   assert.ok(result.meta.rejected.length > 0, '应存在被驳回的建议');
   assert.ok(result.meta.weights.product_manager < 1 / 3, `pm权重=${result.meta.weights.product_manager}`);
   assert.ok(result.meta.muted.includes('product_manager'), `muted=${result.meta.muted}`);
@@ -340,14 +340,14 @@ await test('overbudget：提案被驳回、掉权并在下一轮静默', async (
 
 await test('water：水字数导致掉权（并可能被静默）', async () => {
   const config = cfg({ mockScenario: 'water' });
-  const result = await runCouncil({ requirement: REQ, config, llm: bridge(config) });
+  const result = await runQuorum({ requirement: REQ, config, llm: bridge(config) });
   assert.ok(result.meta.weights.product_manager < 1 / 3, `pm权重=${result.meta.weights.product_manager}`);
   assert.ok(result.meta.rounds <= 3);
 });
 
 await test('摘要只含结构化字段，长度受控且不含原文', async () => {
   const config = cfg();
-  const result = await runCouncil({ requirement: REQ, config, llm: bridge(config) });
+  const result = await runQuorum({ requirement: REQ, config, llm: bridge(config) });
   const md = result.markdown;
   assert.ok(md.length <= config.report.maxChars, `len=${md.length}`);
   assert.match(md, /^# 内阁评审结论/);
@@ -359,7 +359,7 @@ await test('摘要只含结构化字段，长度受控且不含原文', async ()
 
 await test('llmCritic=true 且 mock 返回空 verdicts：回落确定性评分不报错', async () => {
   const config = cfg({ llmCritic: true });
-  const result = await runCouncil({ requirement: REQ, config, llm: bridge(config) });
+  const result = await runQuorum({ requirement: REQ, config, llm: bridge(config) });
   assert.ok(result.markdown.includes('评分源 heuristic'));
 });
 
@@ -384,13 +384,13 @@ await test('宿主未 inject llm：插件装配与调用仍可跑通（真实回
     },
   });
   apply(ctx, { provider: 'auto', llmCritic: false, mockScenario: 'converge-r2' });
-  const out = await tools.get('council_debate').execute({ requirement: REQ });
+  const out = await tools.get('quorum_debate').execute({ requirement: REQ });
   assert.match(out, /^# 内阁评审结论/);
 });
 
 console.log('\n[6] 插件装配');
 
-await test('apply() 注册 4 个工具，council_debate 可跑通', async () => {
+await test('apply() 注册 4 个工具，quorum_debate 可跑通', async () => {
   const registered = new Map();
   const fakeCtx = {
     tools: { register: (tool) => registered.set(tool.name, tool) },
@@ -399,13 +399,13 @@ await test('apply() 注册 4 个工具，council_debate 可跑通', async () => 
   apply(fakeCtx, { provider: 'mock', llmCritic: false, mockScenario: 'converge-r2' });
   assert.deepEqual(
     [...registered.keys()].sort(),
-    ['council_debate', 'council_rules', 'council_score', 'council_status'].sort(),
+    ['quorum_debate', 'quorum_rules', 'quorum_score', 'quorum_status'].sort(),
   );
-  const out = await registered.get('council_debate').execute({ requirement: REQ });
+  const out = await registered.get('quorum_debate').execute({ requirement: REQ });
   assert.match(out, /^# 内阁评审结论/);
-  const status = registered.get('council_status').execute({ limit: 5 });
-  assert.match(status, /council-/);
-  const scored = registered.get('council_score').execute({ requirement: REQ, statement: '两周内复用现有工具交付最小闭环。' });
+  const status = registered.get('quorum_status').execute({ limit: 5 });
+  assert.match(status, /quorum-/);
+  const scored = registered.get('quorum_score').execute({ requirement: REQ, statement: '两周内复用现有工具交付最小闭环。' });
   assert.ok(JSON.parse(scored).scores.economy > 0);
 });
 

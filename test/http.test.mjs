@@ -1,4 +1,4 @@
-// dsh-council / test/http.test.mjs —— 真实 HTTP 路径的端到端验证
+// dsh-quorum / test/http.test.mjs —— 真实 HTTP 路径的端到端验证
 //
 // 起一个本地 OpenAI 兼容的桩服务，确认三件事：
 //   1. 请求形状对（/chat/completions、Bearer、max_tokens、system+user）；
@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { resolveConfig } from '../lib/config.js';
 import { createHttpProvider } from '../lib/llm/openai-compatible.js';
-import { runCouncil } from '../lib/orchestrator.js';
+import { runQuorum } from '../lib/orchestrator.js';
 import { createBridge } from '../lib/llm/bridge.js';
 
 const REQ = '给一个两周内可交付的插件方案：三席辩论、上下文隔离、3 轮熔断。';
@@ -105,11 +105,11 @@ await test('createHttpProvider：500 会重试一次后成功', async () => {
   assert.equal(calls.length, 2, '应重试一次');
 });
 
-await test('runCouncil 走 HTTP：多轮推进并只回 Markdown', async () => {
+await test('runQuorum 走 HTTP：多轮推进并只回 Markdown', async () => {
   calls.length = 0;
   failNext = 0;
   const config = resolveConfig({ provider: 'http', baseUrl, apiKey: 'k', llmCritic: true, maxRounds: 3 });
-  const result = await runCouncil({ requirement: REQ, config, llm: createBridge(config, { explicit: 'http' }) });
+  const result = await runQuorum({ requirement: REQ, config, llm: createBridge(config, { explicit: 'http' }) });
   assert.match(result.markdown, /^# 内阁评审结论/);
   assert.ok(result.meta.rounds >= 1 && result.meta.rounds <= 3, `rounds=${result.meta.rounds}`);
   assert.equal(result.meta.provider, 'http');

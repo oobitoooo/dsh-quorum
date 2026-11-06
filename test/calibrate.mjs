@@ -5,7 +5,7 @@ import { createMockProvider } from '../lib/llm/mock.js';
 import { scoreStatement } from '../lib/critic.js';
 import { coverage } from '../lib/text.js';
 
-const REQ = '为 dsh-council 插件设计多 Agent 辩论式需求评审：上下文隔离、动态权重、3 轮熔断，两周内可交付。';
+const REQ = '为 dsh-quorum 插件设计多 Agent 辩论式需求评审：上下文隔离、动态权重、3 轮熔断，两周内可交付。';
 const config = resolveConfig({ provider: 'mock', llmCritic: false });
 
 for (const scenario of ['converge-r2', 'never', 'water', 'overbudget']) {

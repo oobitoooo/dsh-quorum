@@ -1,4 +1,4 @@
-# dsh-council
+# dsh-quorum
 
 > DSH 插件：在正式启动大型项目前，拉起一个**虚拟内阁**做需求评审。
 > 三席辩论 → 主工作流打分 → 动态话语权 → 最多 3 轮熔断 → **只回一份 Markdown 摘要**。
@@ -21,7 +21,7 @@
                     │  ⑤ 熔断：共识 / 最优解 / 无进展 / 预算 / 3 轮上限 → 命中即停                    │
                     │  ⑥ 主席（Chairman，可选）：把结构化结论收敛成一段执行摘要                      │
                     │  ⑦ 出口：buildReport() 生成 Markdown（过出口守卫）──▶ 主上下文                │
-                    │     辩论全文（可选）──▶ $DSH_HOME/council/runs/<runId>.json（只落盘，不回传）  │
+                    │     辩论全文（可选）──▶ $DSH_HOME/quorum/runs/<runId>.json（只落盘，不回传）  │
                     └──────────────────────────────────────────────────────────────────────────┘
                           ▲                    ▲                      ▲
                    ProductManager          RedTeam                Architect
@@ -79,26 +79,29 @@ w' = project(w · factor → 单纯形, 下限 8%, 上限 60%)
 
 | 工具 | 用途 |
 | --- | --- |
-| `council_debate` | 跑一场评审，回 Markdown（`json: true` 回元数据） |
-| `council_rules` | 打印席位职责、评分口径、权重与熔断规则 |
-| `council_score` | 对一段发言做确定性评分（零模型，调提示词时对齐口径） |
-| `council_status` | 本会话最近几次运行的轮次 / 终止原因 / 最终权重 |
+| `quorum_debate` | 跑一场评审，回 Markdown（`json: true` 回元数据） |
+| `quorum_rules` | 打印席位职责、评分口径、权重与熔断规则 |
+| `quorum_score` | 对一段发言做确定性评分（零模型，调提示词时对齐口径） |
+| `quorum_status` | 本会话最近几次运行的轮次 / 终止原因 / 最终权重 |
 
 ## 安装
 
 ```powershell
 # 1) 挂进 desktop profile（link 安装：源目录不能移动）
-dsh plugin --profile desktop add "C:\Users\17359\Documents\deepseek-harness\plugins\dsh-council"
+dsh plugin --profile desktop add "C:\Users\17359\Documents\deepseek-harness\plugins\dsh-quorum"
 # 2) 重启客户端（宿主启动时挂载插件）
 ```
 
 不装 DSH 也能直接跑（零依赖、纯 ESM，Node ≥ 18）：
 
-> ⚠️ 生态里已经有同名插件 [`fufengyuan/dsh-council`](https://github.com/fufengyuan/dsh-council)（18 位历史人物议会）。本插件与它**不是同一个实现**；同一个 profile 同时安装会撞包名与工具名，二选一。
+> **关于名字**：`quorum` = 法定人数 / 共识门槛——三席之间达成可执行结论所需的最小一致度。
+> 本插件早期叫 `dsh-council`，与生态里已有的 [`fufengyuan/dsh-council`](https://github.com/fufengyuan/dsh-council)（18 位历史人物议会）撞名，已改名。
+> 两者不是同一个实现，也不建议装进同一个 profile。
 
 ```powershell
-node bin/council.mjs "为插件设计多 Agent 辩论评审，两周内交付" --scenario=converge-r2
-node test/smoke.mjs      # 21 项：隔离 / 调权 / 熔断 / 出口 / 端到端
+node bin/quorum.mjs "为插件设计多 Agent 辩论评审，两周内交付" --scenario=converge-r2
+node test/smoke.mjs      # 28 项：隔离 / 调权 / 熔断 / 出口 / 匿名互评 / 主席 / 端到端
+node test/edge.test.mjs  # 14 项：空需求 / 超长 / emoji / 全员失败 / 并发 / 截断
 node test/http.test.mjs  # 4 项：真实 HTTP 形状、重试、错误路径
 ```
 
@@ -107,11 +110,11 @@ node test/http.test.mjs  # 4 项：真实 HTTP 形状、重试、错误路径
 优先级：工具参数 > `apply(ctx, config)` > 环境变量 > 默认值。
 
 ```yaml
-dsh-council:
+dsh-quorum:
   provider: http            # auto | mock | http | harness
   baseUrl: https://api.deepseek.com/v1
   model: deepseek-chat
-  apiKeyEnv: DSH_COUNCIL_API_KEY   # key 只从环境变量读，不写配置
+  apiKeyEnv: DSH_QUORUM_API_KEY   # key 只从环境变量读，不写配置
   maxRounds: 3
   earlyStop: true
   anonymize: true                  # 匿名互评（评审团只看到 A/B/C）
@@ -123,7 +126,7 @@ dsh-council:
   weights: { eta: 0.9, min: 0.08, max: 0.6 }
   thresholds: { consensusQuality: 6.8, consensusSpread: 1.6, economyReject: 3.0 }
   budget: { perAgentTokens: 700, totalTokens: 9000 }
-  returnTranscript: false   # true 时全文落盘 $DSH_HOME/council/runs/
+  returnTranscript: false   # true 时全文落盘 $DSH_HOME/quorum/runs/
 ```
 
 **provider 行为**：`auto` = 有 `baseUrl` + key 走 http → 否则有 `ctx.llm` 走 harness → 否则 mock。
@@ -165,7 +168,7 @@ lib/
 | 项目 | 作者 | 借鉴了什么 | 落地位置 |
 | --- | --- | --- | --- |
 | [karpathy/llm-council](https://github.com/karpathy/llm-council) | Andrej Karpathy | ① 匿名互评（评审者看不到署名）② 主席收敛出最终答案 | `critic.js#anonymizeStatements`、`orchestrator.js#runChairman` |
-| [fufengyuan/dsh-council](https://github.com/fufengyuan/dsh-council) | fufengyuan | 「议会 + 主席 + 项目级默认配置」的产品形态（与本插件同名、不同实现） | 主席段、配置层、报告结构 |
+| [fufengyuan/dsh-council](https://github.com/fufengyuan/dsh-council) | fufengyuan | 「议会 + 主席 + 项目级默认配置」的产品形态（本插件早期与之撞名，已改名 quorum） | 主席段、配置层、报告结构 |
 | [WDahah/portable-dsh-multi-agent-plugin](https://github.com/WDahah/portable-dsh-multi-agent-plugin) | WDahah | 「任务派给一个模型、评审交给另一个模型」→ 同源时评审权重降级 | `config.criticModel/criticProvider`、`index.js` 独立性判定 |
 | [lkshjd/dsh-debate](https://github.com/lkshjd/dsh-debate) | lkshjd | 「辩手互不可见（防人云亦云）→ 交叉质询 → 评审收敛」的流程编排 | relay 简报 + 轮次循环（隔离本身是本项目独立设计） |
 | [shlouai/dsh-debate](https://github.com/shlouai/dsh-debate) | shlouai | 「辩论记录交由主代理裁决」的角色划分，印证 Critic 不应参与提案 | `critic.js` 的评审团与席位分离 |

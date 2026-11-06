@@ -1,22 +1,22 @@
 #!/usr/bin/env node
-// dsh-council / bin/council.mjs —— 命令行入口（不装 DSH 也能验证编排）
+// dsh-quorum / bin/quorum.mjs —— 命令行入口（不装 DSH 也能验证编排）
 //
 // 用法：
-//   node bin/council.mjs "为插件设计多 Agent 辩论评审，两周内交付" --scenario=converge-r2
-//   node bin/council.mjs "需求..." --provider=http --base-url=https://api.deepseek.com/v1 --model=deepseek-chat
-// 环境变量（http provider）：DSH_COUNCIL_API_KEY
+//   node bin/quorum.mjs "为插件设计多 Agent 辩论评审，两周内交付" --scenario=converge-r2
+//   node bin/quorum.mjs "需求..." --provider=http --base-url=https://api.deepseek.com/v1 --model=deepseek-chat
+// 环境变量（http provider）：DSH_QUORUM_API_KEY
 //
-// 输出只有 Markdown 摘要；加 --json 输出元数据，加 --transcript 把全文落到 $DSH_HOME/council/runs/。
+// 输出只有 Markdown 摘要；加 --json 输出元数据，加 --transcript 把全文落到 $DSH_HOME/quorum/runs/。
 
 import { resolveConfig } from '../lib/config.js';
 import { createBridge } from '../lib/llm/bridge.js';
-import { runCouncil } from '../lib/orchestrator.js';
+import { runQuorum } from '../lib/orchestrator.js';
 import { STOP_REASONS } from '../lib/breaker.js';
 
-const HELP = `dsh-council —— 虚拟内阁需求评审
+const HELP = `dsh-quorum —— 虚拟内阁需求评审
 
 用法：
-  node bin/council.mjs "<需求>" [选项]
+  node bin/quorum.mjs "<需求>" [选项]
 
 选项：
   --scenario=<名字>   mock 剧本：converge-r2 | converge-r3 | never | water | overbudget
@@ -25,7 +25,7 @@ const HELP = `dsh-council —— 虚拟内阁需求评审
   --base-url=<url>    OpenAI 兼容端点
   --model=<id>        模型 id
   --json              只输出运行元数据
-  --transcript        把辩论全文落盘到 $DSH_HOME/council/runs/（不回显）
+  --transcript        把辩论全文落盘到 $DSH_HOME/quorum/runs/（不回显）
   --no-critic         评审团不走模型，只用确定性评分表
   --critic-model=<id> 评审团独立模型（不填 = 与席位同源，LLM 权重自动降到 0.4）
   --chairman=<模式>   主席裁定：auto | on | off（默认 auto：非 mock 时启用）
@@ -33,7 +33,7 @@ const HELP = `dsh-council —— 虚拟内阁需求评审
   -h, --help          显示本帮助
 
 环境变量：
-  DSH_COUNCIL_API_KEY   http provider 的 key（也可用 --api-key-env 指定别的变量名）
+  DSH_QUORUM_API_KEY   http provider 的 key（也可用 --api-key-env 指定别的变量名）
 `;
 
 function parseArgs(argv) {
@@ -74,7 +74,7 @@ const config = resolveConfig({
 });
 
 const bridge = createBridge(config);
-if (bridge.fallbackNote && !flags.json) console.error(`[council] ${bridge.fallbackNote}`);
+if (bridge.fallbackNote && !flags.json) console.error(`[quorum] ${bridge.fallbackNote}`);
 
 const criticSeparate = Boolean(config.criticModel);
 const criticConfig = criticSeparate ? resolveConfig({ ...config, model: config.criticModel }) : config;
@@ -86,7 +86,7 @@ const criticNote = !config.llmCritic
     ? `评审团独立（${criticBridge.id}/${config.criticModel}），LLM 权重 ${criticWeight}`
     : `评审团与席位同源（${bridge.id}），LLM 权重降到 ${criticWeight}`;
 
-const result = await runCouncil({
+const result = await runQuorum({
   requirement,
   config,
   llm: bridge,
@@ -96,12 +96,12 @@ const result = await runCouncil({
   onEvent: (type, payload) => {
     if (type === 'round/end') {
       console.error(
-        `[council] 第 ${payload.round} 轮：质量 ${payload.quality}｜离散度 ${payload.spread}｜阻断 ${payload.openBlockers}｜` +
+        `[quorum] 第 ${payload.round} 轮：质量 ${payload.quality}｜离散度 ${payload.spread}｜阻断 ${payload.openBlockers}｜` +
           `${payload.decision.stop ? `终止（${STOP_REASONS[payload.decision.reason] ?? payload.decision.reason}）` : '继续'}`,
       );
     }
-    if (type === 'agent/failed') console.error(`[council] ${payload.id} 调用失败：${payload.error}`);
-    if (type === 'chairman/failed') console.error(`[council] 主席裁定失败：${payload.error}`);
+    if (type === 'agent/failed') console.error(`[quorum] ${payload.id} 调用失败：${payload.error}`);
+    if (type === 'chairman/failed') console.error(`[quorum] 主席裁定失败：${payload.error}`);
   },
 });
 

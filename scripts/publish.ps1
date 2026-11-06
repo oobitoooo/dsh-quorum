@@ -1,4 +1,4 @@
-﻿# publish.ps1 —— 把 dsh-council 推上 GitHub（本机 GitHub 被 hosts 指到 127.0.0.1，所以全程用 --resolve 绕 DNS）
+﻿# publish.ps1 —— 把 dsh-quorum 推上 GitHub（本机 GitHub 被 hosts 指到 127.0.0.1，所以全程用 --resolve 绕 DNS）
 #
 # 用法（token 只从环境变量读，不落盘）：
 #   $env:GITHUB_TOKEN = "<YOUR_TOKEN>"      # classic token，勾 repo；或 fine-grained：Contents + Administration 写
@@ -12,7 +12,7 @@
 
 param(
   [string]$Owner = 'oobitoooo',
-  [string]$Repo = 'dsh-council',
+  [string]$Repo = 'dsh-quorum',
   [string]$Token = $env:GITHUB_TOKEN,
   [string]$ApiIp = '140.82.112.5',
   [string]$GitIp = '140.82.112.4',
