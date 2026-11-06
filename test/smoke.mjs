@@ -390,7 +390,7 @@ await test('宿主未 inject llm：插件装配与调用仍可跑通（真实回
 
 console.log('\n[6] 插件装配');
 
-await test('apply() 注册 4 个工具，quorum_debate 可跑通', async () => {
+await test('apply() 注册 5 个工具，quorum_debate 可跑通', async () => {
   const registered = new Map();
   const fakeCtx = {
     tools: { register: (tool) => registered.set(tool.name, tool) },
@@ -399,7 +399,7 @@ await test('apply() 注册 4 个工具，quorum_debate 可跑通', async () => {
   apply(fakeCtx, { provider: 'mock', llmCritic: false, mockScenario: 'converge-r2' });
   assert.deepEqual(
     [...registered.keys()].sort(),
-    ['quorum_debate', 'quorum_rules', 'quorum_score', 'quorum_status'].sort(),
+    ['quorum_debate', 'quorum_panel', 'quorum_rules', 'quorum_score', 'quorum_status'].sort(),
   );
   const out = await registered.get('quorum_debate').execute({ requirement: REQ });
   assert.match(out, /^# 内阁评审结论/);

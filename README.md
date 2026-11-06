@@ -83,6 +83,27 @@ w' = project(w · factor → 单纯形, 下限 8%, 上限 60%)
 | `quorum_rules` | 打印席位职责、评分口径、权重与熔断规则 |
 | `quorum_score` | 对一段发言做确定性评分（零模型，调提示词时对齐口径） |
 | `quorum_status` | 本会话最近几次运行的轮次 / 终止原因 / 最终权重 |
+| `quorum_panel` | 起一个本机控制面板（127.0.0.1），点按钮开评审、看历史与报告 |
+
+## 控制面板
+
+```text
+quorum_panel(action="start")   → http://127.0.0.1:7845/
+quorum_panel(action="status")  → 当前地址
+quorum_panel(action="stop")    → 关闭
+```
+
+零依赖单页（`lib/panel.js`，一个 `node:http` + 内联 HTML/JS，不引入前端构建链）：
+
+- **左侧**：填需求、选 mock 剧本、选轮次 → 点「开一场」，几秒到几十秒出结果
+- **右上**：最近 20 次运行，每条带轮次 / 终止原因 / 质量分 / 权重条形图（三席影响力一眼可见）
+- **下方**：点任意一条记录看完整 Markdown 摘要（就是回传主上下文的那份）
+- 页面每 5 秒自动刷新，别的会话/工具跑完也会出现
+
+安全边界：只监听 `127.0.0.1`；写操作（`POST /api/debate`）要求页面内嵌的一次性 token（`x-quorum-token`），
+本机其它网页拿不到；面板只读**内存里的运行记录**，不读会话文件、不读 transcript。
+
+接口（自己接 curl 也行）：`GET /api/state`、`GET /api/health`、`POST /api/debate`。
 
 ## 安装
 
@@ -103,6 +124,7 @@ node bin/quorum.mjs "为插件设计多 Agent 辩论评审，两周内交付" --
 node test/smoke.mjs      # 28 项：隔离 / 调权 / 熔断 / 出口 / 匿名互评 / 主席 / 端到端
 node test/edge.test.mjs  # 14 项：空需求 / 超长 / emoji / 全员失败 / 并发 / 截断
 node test/http.test.mjs  # 4 项：真实 HTTP 形状、重试、错误路径
+node test/panel.test.mjs # 9 项：页面/token/401/404/关停 + 工具装配
 ```
 
 ## 配置
@@ -144,6 +166,7 @@ lib/
   weights.js      Hedge 调权、单纯形投影、token 配额
   breaker.js      熔断判定与原因表
   report.js       唯一的出口产物（结构化字段生成，长度硬上限）
+  panel.js        本机控制面板（127.0.0.1 单页 + token，零依赖）
   config.js       默认值与归一化（错配置夹到安全区间并记 warning）
   text.js         分词/覆盖度/JSON 抽取/稳定哈希
   llm/
