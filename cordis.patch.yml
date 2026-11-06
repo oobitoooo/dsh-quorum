@@ -1,0 +1,25 @@
+# ============================================================================
+# dsh-council —— 虚拟内阁 bundle patch
+# ============================================================================
+# 本文件是插件的「挂载声明」：DSH 启动时按 bundle 层栈叠加各插件 patch，
+# 把 council 工具挂进当前 profile。
+#
+# 安装（官方桌面端读 desktop profile）：
+#   dsh plugin --profile desktop add "C:\Users\17359\Documents\deepseek-harness\plugins\dsh-council"
+# 装完重启客户端（宿主在启动时挂载插件）。
+#
+# ⚠ link: 是软链安装：源目录不能移动/改名，移动后要重新 add。
+#
+# 配置示例（写在 profile 的 cordis 配置树里，或直接作为 apply(ctx, config) 的 config）：
+#   dsh-council:
+#     maxRounds: 3
+#     provider: http
+#     baseUrl: https://api.deepseek.com/v1
+#     model: deepseek-chat
+#     apiKeyEnv: DSH_COUNCIL_API_KEY   # key 只从环境变量读，不落配置
+#     returnTranscript: false
+# ============================================================================
+
+- insert:
+    - id: dsh-council
+      name: dsh-council

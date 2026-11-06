@@ -1,0 +1,62 @@
+{
+  "name": "dsh-council",
+  "version": "0.1.0",
+  "description": "DSH 插件：虚拟内阁（ProductManager / RedTeam / Architect）多 Agent 辩论评审 —— 上下文沙箱隔离、TTD 三维评分与动态权重、3 轮熔断与提前终止，只回传 Markdown 摘要",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./orchestrator": "./lib/orchestrator.js",
+    "./critic": "./lib/critic.js",
+    "./weights": "./lib/weights.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "bin",
+    "test",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "check": "node --check lib/index.js && node --check lib/orchestrator.js && node --check lib/critic.js && node --check lib/weights.js && node --check lib/sandbox.js && node --check lib/report.js && node --check lib/breaker.js && node --check lib/llm/bridge.js && node --check lib/llm/mock.js && node --check lib/llm/openai-compatible.js",
+    "test": "node test/smoke.mjs && node test/http.test.mjs",
+    "demo": "node bin/council.mjs"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "multi-agent",
+    "debate",
+    "red-team",
+    "council",
+    "critic",
+    "token-budget"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-tools": {
+      "optional": true
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oobitoooo/dsh-council.git"
+  },
+  "homepage": "https://github.com/oobitoooo/dsh-council#readme",
+  "bugs": {
+    "url": "https://github.com/oobitoooo/dsh-council/issues"
+  }
+}
