@@ -1,7 +1,7 @@
 ﻿# publish.ps1 —— 把 dsh-council 推上 GitHub（本机 GitHub 被 hosts 指到 127.0.0.1，所以全程用 --resolve 绕 DNS）
 #
 # 用法（token 只从环境变量读，不落盘）：
-#   $env:GITHUB_TOKEN = "ghp_xxx"      # classic token，勾 repo；或 fine-grained：Contents + Administration 写
+#   $env:GITHUB_TOKEN = "<YOUR_TOKEN>"      # classic token，勾 repo；或 fine-grained：Contents + Administration 写
 #   powershell -ExecutionPolicy Bypass -File .\scripts\publish.ps1
 #   可选参数：-Owner <账号> -Repo <仓库名> -Private
 #
@@ -24,7 +24,7 @@ $git = 'C:\Program Files\Git\cmd\git.exe'
 if (-not (Test-Path $git)) { $git = 'git' }
 
 if ([string]::IsNullOrWhiteSpace($Token)) {
-  throw '缺少 GITHUB_TOKEN：先 $env:GITHUB_TOKEN = "ghp_..." 再跑本脚本'
+  throw '缺少 GITHUB_TOKEN：先设置 GITHUB_TOKEN 再跑本脚本'
 }
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
