@@ -345,6 +345,31 @@ await test('water：水字数导致掉权（并可能被静默）', async () => 
   assert.ok(result.meta.rounds <= 3);
 });
 
+await test('过程记录：capture=false 时不存在，capture=true 时按轮返回', async () => {
+  const config = cfg();
+  const plain = await runQuorum({ requirement: REQ, config, llm: bridge(config) });
+  assert.equal(plain.transcript, undefined, '工具路径不能带辩论原文');
+
+  const captured = await runQuorum({ requirement: REQ, config, llm: bridge(config), capture: true });
+  assert.ok(Array.isArray(captured.transcript) && captured.transcript.length >= 1);
+  const first = captured.transcript[0];
+  assert.ok(first.statements.length >= 3);
+  assert.ok(first.statements[0].text.length > 10);
+  assert.ok(first.statements[0].scores);
+});
+
+await test('自定义席位：跑起来用新名字，报告里也是新名字', async () => {
+  const config = cfg({ maxRounds: 1 });
+  const personas = [
+    { id: 'product_manager', name: '成本管家', title: '成本', stance: '抠预算', mission: '只关心钱和工期', duties: ['算成本'], forbidden: [], outputRule: '3 行' },
+    { id: 'red_team', name: '安全官', title: '安全', stance: '怀疑', mission: '只关心攻击面', duties: ['找漏洞'], forbidden: [], outputRule: '3 行' },
+    { id: 'architect', name: '交付官', title: '交付', stance: '催进度', mission: '只关心上线', duties: ['排期'], forbidden: [], outputRule: '3 行' },
+  ];
+  const result = await runQuorum({ requirement: REQ, config, llm: bridge(config), personas, capture: true });
+  assert.match(result.markdown, /成本管家/);
+  assert.equal(result.transcript[0].statements[0].name, '成本管家');
+});
+
 await test('摘要只含结构化字段，长度受控且不含原文', async () => {
   const config = cfg();
   const result = await runQuorum({ requirement: REQ, config, llm: bridge(config) });

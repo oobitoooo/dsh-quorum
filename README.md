@@ -83,7 +83,7 @@ w' = project(w · factor → 单纯形, 下限 8%, 上限 60%)
 | `quorum_rules` | 打印席位职责、评分口径、权重与熔断规则 |
 | `quorum_score` | 对一段发言做确定性评分（零模型，调提示词时对齐口径） |
 | `quorum_status` | 本会话最近几次运行的轮次 / 终止原因 / 最终权重 |
-| `quorum_panel` | 起一个本机控制面板（127.0.0.1），点按钮开评审、看历史与报告 |
+| `quorum_panel` | 本机控制面板（127.0.0.1）：改席位人设、开评审、看逐轮过程并翻译、看摘要 |
 
 ## 控制面板
 
@@ -95,15 +95,25 @@ quorum_panel(action="stop")    → 关闭
 
 零依赖单页（`lib/panel.js`，一个 `node:http` + 内联 HTML/JS，不引入前端构建链）：
 
-- **左侧**：填需求、选 mock 剧本、选轮次 → 点「开一场」，几秒到几十秒出结果
-- **右上**：最近 20 次运行，每条带轮次 / 终止原因 / 质量分 / 权重条形图（三席影响力一眼可见）
-- **下方**：点任意一条记录看完整 Markdown 摘要（就是回传主上下文的那份）
-- 页面每 5 秒自动刷新，别的会话/工具跑完也会出现
+- **开一场**：填需求、选 mock 剧本、选轮次 → 点击执行
+- **席位人设**：直接改每一席的名称 / 头衔 / 立场 / 职责 / 输出纪律，可加席（≤6）可删席；
+  保存后落盘 `$DSH_HOME/quorum/personas.json`，下次开面板还在，**下一场辩论就按新人设跑**
+- **最近运行**：每条带轮次 / 终止原因 / 质量分 / 权重条形图
+- **辩论过程**：点运行记录 → 逐轮逐席看原文、评分、未解决阻断
+- **过程翻译**：把整段流程翻成英文/中文。有真实模型时逐轮翻译（保留 P0/P1、数字、席位名）；
+  没配模型（mock）时回退**术语表替换**并在结果顶部明确写"不是机器翻译"——不拿半成品冒充译文
+- 页面每 5 秒自动刷新
 
-安全边界：只监听 `127.0.0.1`；写操作（`POST /api/debate`）要求页面内嵌的一次性 token（`x-quorum-token`），
-本机其它网页拿不到；面板只读**内存里的运行记录**，不读会话文件、不读 transcript。
+人设的边界：可改「内容」（谁、什么立场、负责什么、输出纪律），不可改「结构」——
+席位 id/数量由插件归一化（最多 6 席，缺字段继承默认品性），这样权重、沙箱、报告不用为
+"用户少填一个字段"分支。
 
-接口（自己接 curl 也行）：`GET /api/state`、`GET /api/health`、`POST /api/debate`。
+安全边界：只监听 `127.0.0.1`；所有写操作（`/api/debate`、`/api/personas`、`/api/translate`）
+要求页面内嵌的一次性 token（`x-quorum-token`）；面板只读**内存里的运行记录**，不读会话文件、
+不读工具落盘的 transcript。
+
+接口（自己接 curl 也行）：`GET /api/state`、`GET /api/health`、`POST /api/debate`、
+`POST /api/personas`、`POST /api/translate`。
 
 ## 安装
 
@@ -121,10 +131,10 @@ dsh plugin --profile desktop add "C:\Users\17359\Documents\deepseek-harness\plug
 
 ```powershell
 node bin/quorum.mjs "为插件设计多 Agent 辩论评审，两周内交付" --scenario=converge-r2
-node test/smoke.mjs      # 28 项：隔离 / 调权 / 熔断 / 出口 / 匿名互评 / 主席 / 端到端
+node test/smoke.mjs      # 30 项：隔离 / 调权 / 熔断 / 出口 / 匿名互评 / 主席 / 人设 / 端到端
 node test/edge.test.mjs  # 14 项：空需求 / 超长 / emoji / 全员失败 / 并发 / 截断
 node test/http.test.mjs  # 4 项：真实 HTTP 形状、重试、错误路径
-node test/panel.test.mjs # 9 项：页面/token/401/404/关停 + 工具装配
+node test/panel.test.mjs # 15 项：页面/token/401/404/人设/过程/翻译/关停
 ```
 
 ## 配置
@@ -167,6 +177,7 @@ lib/
   breaker.js      熔断判定与原因表
   report.js       唯一的出口产物（结构化字段生成，长度硬上限）
   panel.js        本机控制面板（127.0.0.1 单页 + token，零依赖）
+  translate.js    辩论过程翻译（真实模型 / 术语表回退）
   config.js       默认值与归一化（错配置夹到安全区间并记 warning）
   text.js         分词/覆盖度/JSON 抽取/稳定哈希
   llm/

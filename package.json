@@ -1,6 +1,6 @@
 {
   "name": "dsh-quorum",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "DSH 插件：虚拟内阁（ProductManager / RedTeam / Architect）多 Agent 辩论评审 —— 上下文沙箱隔离、TTD 三维评分与动态权重、3 轮熔断与提前终止，只回传 Markdown 摘要",
   "type": "module",
   "main": "lib/index.js",
