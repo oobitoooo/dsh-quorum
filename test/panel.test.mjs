@@ -42,7 +42,7 @@ const calls = [];
 const panel = await startPanel({
   port: 0,
   getState: () => ({
-    version: '0.4.0-test',
+    version: '0.4.1-test',
     provider: 'mock',
     personas: PERSONAS,
     defaultPersonas: PERSONAS,
@@ -72,7 +72,7 @@ await test('GET / 返回页面，token 已注入', async () => {
 
 await test('GET /api/state 带 personas 与 defaultPersonas', async () => {
   const data = await (await fetch(`${panel.url}api/state`)).json();
-  assert.equal(data.version, '0.4.0-test');
+  assert.equal(data.version, '0.4.1-test');
   assert.equal(data.personas.length, 3);
   assert.equal(data.defaultPersonas.length, 3);
   assert.equal(data.runs.length, 1);
@@ -178,7 +178,7 @@ await test('quorum_panel start/status/stop 走通，state 带席位', async () =
   assert.ok(pluginPanelUrl, `应返回地址：${started}`);
 
   const state = await (await fetch(`${pluginPanelUrl}api/state`)).json();
-  assert.equal(state.version, '0.4.0');
+  assert.equal(state.version, '0.4.1');
   assert.equal(state.personas.length, 3);
   assert.match(await tools.get('quorum_panel').execute({ action: 'status' }), /面板运行中/);
 });

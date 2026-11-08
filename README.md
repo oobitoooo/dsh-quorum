@@ -135,6 +135,7 @@ node test/smoke.mjs      # 30 项：隔离 / 调权 / 熔断 / 出口 / 匿名�
 node test/edge.test.mjs  # 14 项：空需求 / 超长 / emoji / 全员失败 / 并发 / 截断
 node test/http.test.mjs  # 4 项：真实 HTTP 形状、重试、错误路径
 node test/panel.test.mjs # 15 项：页面/token/401/404/人设/过程/翻译/关停
+node test/adversarial.test.mjs # 14 项：畸形 JSON / 超大 body / 1 席 / 6 席 / 脏席位 / 落盘 / 损坏配置
 ```
 
 ## 配置
