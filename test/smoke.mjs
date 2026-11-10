@@ -14,6 +14,12 @@ import { buildCriticUserPrompt } from '../lib/personas.js';
 import { createBridge } from '../lib/llm/bridge.js';
 import { runQuorum } from '../lib/orchestrator.js';
 import { apply } from '../lib/index.js';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+// QUORUM_TEST_HOME: 隔离测试产生的历史/人设，别写进真实 ~/.dsh
+process.env.DSH_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'quorum-smoke-'));
+
 
 const REQ =
   '为 dsh-quorum 插件设计多 Agent 辩论式需求评审：上下文隔离、动态权重、3 轮熔断，两周内可交付。';

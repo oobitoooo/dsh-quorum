@@ -46,6 +46,9 @@ await test('独立面板能跑辩论，并留下过程记录', async () => {
   assert.equal(state.runs.length, 1);
   assert.ok(state.runs[0].transcript.length >= 1);
   assert.ok(state.runs[0].markdown.startsWith('# 内阁评审结论'));
+  const historyFile = path.join(home, 'quorum', 'runs.json');
+  assert.ok(fs.existsSync(historyFile), '运行记录应落盘');
+  assert.ok(JSON.parse(fs.readFileSync(historyFile, 'utf8')).length >= 1);
 });
 
 await test('独立面板保存人设会落盘（与插件共用同一份文件）', async () => {

@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import { startPanel } from '../lib/panel.js';
 import { apply, VERSION } from '../lib/index.js';
 import { normalizePersonas, PERSONAS } from '../lib/personas.js';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+// QUORUM_TEST_HOME: 隔离测试产生的历史/人设，别写进真实 ~/.dsh
+process.env.DSH_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'quorum-panel-'));
+
 
 let passed = 0;
 const failures = [];
@@ -75,6 +81,8 @@ await test('GET /api/state 带 personas 与 defaultPersonas', async () => {
   assert.equal(data.version, '0.4.1-test');
   assert.equal(data.personas.length, 3);
   assert.equal(data.defaultPersonas.length, 3);
+  assert.equal(data.presets.length, 2);
+  assert.equal(data.presetData.product_squad.length, 3);
   assert.equal(data.runs.length, 1);
 });
 
