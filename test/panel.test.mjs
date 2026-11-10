@@ -1,7 +1,7 @@
 // dsh-quorum / test/panel.test.mjs —— 控制面板端到端（真起 HTTP 服务、真发请求）
 import assert from 'node:assert/strict';
 import { startPanel } from '../lib/panel.js';
-import { apply } from '../lib/index.js';
+import { apply, VERSION } from '../lib/index.js';
 import { normalizePersonas, PERSONAS } from '../lib/personas.js';
 
 let passed = 0;
@@ -178,7 +178,7 @@ await test('quorum_panel start/status/stop 走通，state 带席位', async () =
   assert.ok(pluginPanelUrl, `应返回地址：${started}`);
 
   const state = await (await fetch(`${pluginPanelUrl}api/state`)).json();
-  assert.equal(state.version, '0.4.1');
+  assert.equal(state.version, VERSION);
   assert.equal(state.personas.length, 3);
   assert.match(await tools.get('quorum_panel').execute({ action: 'status' }), /面板运行中/);
 });

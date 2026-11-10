@@ -1,6 +1,6 @@
 {
   "name": "dsh-quorum",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "DSH 插件：虚拟内阁（ProductManager / RedTeam / Architect）多 Agent 辩论评审 —— 上下文沙箱隔离、TTD 三维评分与动态权重、3 轮熔断与提前终止，只回传 Markdown 摘要",
   "type": "module",
   "main": "lib/index.js",
@@ -16,7 +16,8 @@
     "bin",
     "test",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "tools"
   ],
   "dsh": {
     "bundle": {
@@ -28,8 +29,9 @@
   },
   "scripts": {
     "check": "node --check lib/panel.js && node --check lib/translate.js && node --check lib/index.js && node --check lib/orchestrator.js && node --check lib/critic.js && node --check lib/weights.js && node --check lib/sandbox.js && node --check lib/report.js && node --check lib/breaker.js && node --check lib/llm/bridge.js && node --check lib/llm/mock.js && node --check lib/llm/openai-compatible.js",
-    "test": "node test/smoke.mjs && node test/edge.test.mjs && node test/http.test.mjs && node test/panel.test.mjs && node test/adversarial.test.mjs",
-    "demo": "node bin/quorum.mjs"
+    "test": "node test/smoke.mjs && node test/edge.test.mjs && node test/http.test.mjs && node test/panel.test.mjs && node test/adversarial.test.mjs && node test/standalone.test.mjs",
+    "demo": "node bin/quorum.mjs",
+    "panel": "node bin/panel.mjs"
   },
   "keywords": [
     "dsh",

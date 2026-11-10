@@ -115,6 +115,22 @@ quorum_panel(action="stop")    → 关闭
 接口（自己接 curl 也行）：`GET /api/state`、`GET /api/health`、`POST /api/debate`、
 `POST /api/personas`、`POST /api/translate`。
 
+### 桌面快捷方式
+
+和「免费 API 控制台」同款：桌面上一个 `.cmd`，双击即用。
+
+```
+桌面\dsh-quorum 控制面板.cmd
+  └─ call plugins\dsh-quorum\tools\open-panel.cmd
+       └─ start node bin\panel.mjs --port 7845
+            ├─ 先探 7845–7855 的 /api/health：已有面板（含 DSH 宿主里的那个）就直接开浏览器
+            └─ 没有就起一个独立面板进程，再开浏览器
+```
+
+- 独立模式不依赖 DSH 是否在运行；人设、翻译、运行记录与插件共用同一份 `$DSH_HOME/quorum/personas.json`
+- 想换个图标/名字：复制那个 `.cmd` 改文件名即可；右键→发送到→桌面快捷方式可以换成 `.lnk` 并自选图标
+- 只起服务不开浏览器：`node bin/panel.mjs --no-open`
+
 ## 安装
 
 ```powershell
@@ -136,6 +152,7 @@ node test/edge.test.mjs  # 14 项：空需求 / 超长 / emoji / 全员失败 / 
 node test/http.test.mjs  # 4 项：真实 HTTP 形状、重试、错误路径
 node test/panel.test.mjs # 15 项：页面/token/401/404/人设/过程/翻译/关停
 node test/adversarial.test.mjs # 14 项：畸形 JSON / 超大 body / 1 席 / 6 席 / 脏席位 / 落盘 / 损坏配置
+node test/standalone.test.mjs  # 5 项：独立面板 / 落盘共用 / 翻译 / 关停
 ```
 
 ## 配置
@@ -179,6 +196,7 @@ lib/
   report.js       唯一的出口产物（结构化字段生成，长度硬上限）
   panel.js        本机控制面板（127.0.0.1 单页 + token，零依赖）
   translate.js    辩论过程翻译（真实模型 / 术语表回退）
+  standalone.js   独立面板进程（桌面快捷方式用，不依赖 DSH 宿主）
   config.js       默认值与归一化（错配置夹到安全区间并记 warning）
   text.js         分词/覆盖度/JSON 抽取/稳定哈希
   llm/
