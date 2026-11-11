@@ -5,7 +5,7 @@
 
 import assert from 'node:assert/strict';
 import { resolveConfig } from '../lib/config.js';
-import { PERSONAS } from '../lib/personas.js';
+import { PERSONAS, TEAM_PRESETS } from '../lib/personas.js';
 import { QuorumSandbox, assertNoTranscript } from '../lib/sandbox.js';
 import { projectWeights, updateWeights, initialWeights } from '../lib/weights.js';
 import { decideStop } from '../lib/breaker.js';
@@ -374,6 +374,20 @@ await test('自定义席位：跑起来用新名字，报告里也是新名字',
   const result = await runQuorum({ requirement: REQ, config, llm: bridge(config), personas, capture: true });
   assert.match(result.markdown, /成本管家/);
   assert.equal(result.transcript[0].statements[0].name, '成本管家');
+});
+
+await test('自定义席位仍能开阻断（按槽位 role，而不是名字 id）', async () => {
+  const config = cfg({ maxRounds: 1 });
+  const result = await runQuorum({
+    requirement: REQ,
+    config,
+    llm: bridge(config),
+    personas: TEAM_PRESETS.product_squad,
+    capture: true,
+  });
+  const open = result.transcript[0].summary.openBlockers;
+  assert.ok(open.length > 0, '第 1 轮应该有阻断（否则改名就把安全机制改没了）');
+  assert.notEqual(result.meta.stopReason, 'consensus');
 });
 
 await test('摘要只含结构化字段，长度受控且不含原文', async () => {

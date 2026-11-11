@@ -155,7 +155,7 @@ dsh plugin --profile desktop add "C:\Users\17359\Documents\deepseek-harness\plug
 
 ```powershell
 node bin/quorum.mjs "为插件设计多 Agent 辩论评审，两周内交付" --scenario=converge-r2
-node test/smoke.mjs      # 30 项：隔离 / 调权 / 熔断 / 出口 / 匿名互评 / 主席 / 人设 / 端到端
+node test/smoke.mjs      # 31 项：隔离 / 调权 / 熔断 / 出口 / 匿名互评 / 主席 / 人设 / 端到端
 node test/edge.test.mjs  # 14 项：空需求 / 超长 / emoji / 全员失败 / 并发 / 截断
 node test/http.test.mjs  # 4 项：真实 HTTP 形状、重试、错误路径
 node test/panel.test.mjs # 15 项：页面/token/401/404/人设/过程/翻译/关停
